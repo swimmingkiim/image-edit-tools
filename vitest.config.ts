@@ -14,6 +14,7 @@ export default defineConfig({
       },
       exclude: [
         'scripts/**',
+        'examples/**',
         'src/index.ts',
         'src/mcp/index.ts',
         'src/mcp/server.ts',
