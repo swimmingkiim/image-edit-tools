@@ -16,15 +16,35 @@ npm install image-edit-tools
 
 ## Quick Start (Code)
 ```typescript
-import { crop, resize, pad } from 'image-edit-tools';
+import { crop, resize, addText, composite, pipeline } from 'image-edit-tools';
 
+// Basic resize
 const result = await resize('/path/to/img.jpg', { width: 800 });
 if (!result.ok) {
     console.error(result.error);
     return;
 }
-// Returns a Buffer.
-// Can be saved, piped, or passed explicitly!
+
+// Add text overlay — note the { layers: [...] } wrapper
+const withText = await addText(result.data, {
+    layers: [
+        { text: 'Hello!', x: 40, y: 40, fontSize: 48, color: '#FFFFFF' },
+    ],
+});
+
+// Composite images — same { layers: [...] } pattern
+const merged = await composite(result.data, {
+    layers: [
+        { input: '/path/to/overlay.png', left: 0, top: 0, blend: 'over' },
+    ],
+});
+
+// Pipeline: chain multiple operations in one call
+const card = await pipeline('/path/to/photo.jpg', [
+    { op: 'resize', width: 1080, height: 1080 },
+    { op: 'adjust', brightness: 10, contrast: 5 },
+    { op: 'addText', layers: [{ text: 'Draft', x: 540, y: 540, fontSize: 64, color: '#FF0000', anchor: 'top-center' }] },
+]);
 ```
 
 ## Running the MCP Server
