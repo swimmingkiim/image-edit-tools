@@ -1,7 +1,16 @@
 {
   "name": "image-edit-tools",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Deterministic image editing SDK for AI agents. Ships with MCP tools.",
+  "author": "swimmingkiim",
+  "homepage": "https://github.com/swimmingkiim/image-edit-tools#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swimmingkiim/image-edit-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/swimmingkiim/image-edit-tools/issues"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
