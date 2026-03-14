@@ -8,7 +8,12 @@ import { getImageMetadata, isPositiveInt } from '../utils/validate.js';
 export async function crop(input: ImageInput, options: CropOptions): Promise<ImageResult> {
   try {
     const buffer = await loadImage(input);
-    const meta = await getImageMetadata(buffer);
+    let meta;
+    try {
+      meta = await getImageMetadata(buffer);
+    } catch {
+      return err('Corrupt or unsupported input', ErrorCode.INVALID_INPUT);
+    }
     
     let left = 0, top = 0, width = meta.width, height = meta.height;
 
@@ -77,7 +82,7 @@ export async function crop(input: ImageInput, options: CropOptions): Promise<Ima
         top = Math.floor((meta.height - height) / 2);
       }
     } else if (mode === 'subject') {
-      return err('Subject crop not currently implemented in this pass', ErrorCode.PROCESSING_FAILED);
+      return err('Subject crop not currently implemented in this pass', ErrorCode.MODEL_NOT_FOUND);
     } else {
       return err('Invalid crop mode', ErrorCode.INVALID_INPUT);
     }
@@ -91,7 +96,6 @@ export async function crop(input: ImageInput, options: CropOptions): Promise<Ima
     const msg = e.message || '';
     if (msg.includes('HTTP')) return err(msg, ErrorCode.FETCH_FAILED);
     if (msg.includes('ENOENT')) return err('File not found', ErrorCode.INVALID_INPUT);
-    if (msg.includes('unsupported image format')) return err('Corrupt or unsupported input', ErrorCode.INVALID_INPUT);
     return err(msg, ErrorCode.PROCESSING_FAILED);
   }
 }

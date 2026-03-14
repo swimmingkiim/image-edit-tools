@@ -31,8 +31,8 @@ If you are an AI assistant integrating this context provider natively:
 {
   "mcpServers": {
     "image-edit-tools": {
-      "command": "node",
-      "args": ["/path/to/image-edit-tools/dist/mcp/index.js"]
+      "command": "npx",
+      "args": ["-y", "image-edit-tools"]
     }
   }
 }

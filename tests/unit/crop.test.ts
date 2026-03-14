@@ -72,6 +72,13 @@ describe('crop', () => {
     expect(result.code).toBe('OUT_OF_BOUNDS')
   })
 
+  it('returns MODEL_NOT_FOUND for unimplemented subject mode', async () => {
+    const result = await crop(sampleJpeg, { mode: 'subject' })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.code).toBe('MODEL_NOT_FOUND')
+  })
+
   it('returns error for corrupt input buffer', async () => {
     const result = await crop(Buffer.from('not an image'), { mode: 'absolute', x: 0, y: 0, width: 10, height: 10 })
     expect(result.ok).toBe(false)

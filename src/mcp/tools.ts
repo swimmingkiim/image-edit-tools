@@ -52,8 +52,12 @@ export const allTools: Tool[] = [
       type: 'object',
       properties: {
         image: { type: 'string' },
-        brightness: { type: 'number' }, contrast: { type: 'number' }, saturation: { type: 'number' },
-        hue: { type: 'number' }, sharpness: { type: 'number' }, temperature: { type: 'number' }
+        brightness: { type: 'number', description: 'Range: -100 to 100' }, 
+        contrast: { type: 'number', description: 'Range: -100 to 100' }, 
+        saturation: { type: 'number', description: 'Range: -100 to 100' },
+        hue: { type: 'number', description: 'Range: 0 to 360' }, 
+        sharpness: { type: 'number', description: 'Range: 0 to 100' }, 
+        temperature: { type: 'number', description: 'Range: -100 to 100' }
       },
       required: ['image']
     }
@@ -78,7 +82,18 @@ export const allTools: Tool[] = [
       type: 'object',
       properties: {
         image: { type: 'string' },
-        regions: { type: 'array', items: { type: 'object' } }
+        regions: { 
+          type: 'array', 
+          items: { 
+            type: 'object',
+            properties: { 
+              x: { type: 'number' }, y: { type: 'number' }, 
+              width: { type: 'number' }, height: { type: 'number' }, 
+              radius: { type: 'number', description: 'Blur radius' } 
+            },
+            required: ['x', 'y', 'width', 'height']
+          } 
+        }
       },
       required: ['image']
     }
@@ -191,6 +206,19 @@ export const allTools: Tool[] = [
       },
       required: ['image', 'operations']
     }
+  },
+  {
+    name: 'image_batch',
+    description: 'Runs a single operation on multiple images.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        images: { type: 'array', items: { type: 'string' } },
+        operation: { type: 'string' },
+        options: { type: 'object' }
+      },
+      required: ['images', 'operation', 'options']
+    }
   }
 ];
 
@@ -199,6 +227,7 @@ export async function handleTool(name: string, args: Record<string, any>): Promi
   let result: any;
   
   if (name === 'image_pipeline') result = await api.pipeline(image, args.operations);
+  else if (name === 'image_batch') result = await api.batch(args.images, args.operation, args.options);
   else if (name === 'image_crop') result = await api.crop(image, args as any);
   else if (name === 'image_resize') result = await api.resize(image, args as any);
   else if (name === 'image_pad') result = await api.pad(image, args as any);
@@ -208,16 +237,16 @@ export async function handleTool(name: string, args: Record<string, any>): Promi
   else if (name === 'image_add_text') result = await api.addText(image, args as any);
   else if (name === 'image_composite') result = await api.composite(image, args as any);
   else if (name === 'image_watermark') {
-    // Need to handle image vs imageLayer prop due to conflict with 'image' base parameter.
-    if (args.type === 'image' && args.imageLayer) args.image = args.imageLayer;
-    result = await api.watermark(image, args as any);
+    const opts = { ...args };
+    if (opts.type === 'image' && opts.imageLayer) opts.image = opts.imageLayer;
+    result = await api.watermark(image, opts as any);
   }
   else if (name === 'image_remove_bg') result = await api.removeBg(image, args as any);
   else if (name === 'image_convert') result = await api.convert(image, args as any);
   else if (name === 'image_optimize') result = await api.optimize(image, args as any);
   else if (name === 'image_get_metadata') {
     const meta = await api.getMetadata(image);
-    return JSON.stringify(meta);
+    return JSON.stringify(meta.ok ? meta.data : { error: meta.error, code: meta.code });
   }
   else if (name === 'image_get_dominant_colors') {
     const cols = await api.getDominantColors(image, args.count);
@@ -238,21 +267,8 @@ export async function handleTool(name: string, args: Record<string, any>): Promi
   if (result && !result.ok) {
     return JSON.stringify({ error: result.error, code: result.code });
   } else if (result && Buffer.isBuffer(result.data)) {
-    // Wait, the prompt specifically mandates:
-    // const base64 = result.data.toString('base64'); return JSON.stringify({ ok: true, data: `data:image/png;base64,${base64}` })
-    // Unless the user explicitly converts to another format, we can safely just wrap it in data URI based on format if possible, or default to generic image type. Let's inspect output metadata? No, that's slow. We can just say 'data:image/...'. A basic `image/png` is fine for arbitrary buffers returned as images. Wait, `image_convert` could output WebP.
-    // Let's use getMetadata lazily just to find format? Actually, testing expects `data:image/...`. It's fine to just write `data:image/xyz;base64,...`. I'll use sharp metadata quickly to get the exact format!
-    
-    try {
-      const meta = await api.getMetadata(result.data);
-      let t = 'png';
-      if (meta.ok) t = meta.data.format;
-      const b64 = result.data.toString('base64');
-      return JSON.stringify({ ok: true, data: `data:image/${t};base64,${b64}` });
-    } catch {
-       const b64 = result.data.toString('base64');
-       return JSON.stringify({ ok: true, data: `data:image/png;base64,${b64}` });
-    }
+    const b64 = result.data.toString('base64');
+    return JSON.stringify({ ok: true, data: `data:image/png;base64,${b64}` });
   }
 
   return JSON.stringify(result);
