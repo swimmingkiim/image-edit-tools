@@ -33,23 +33,29 @@ function escapeXml(text: string): string {
     .replace(/'/g, '&apos;');
 }
 
-function getAnchorProps(anchor: TextAnchor = 'top-left'): { textAnchor: string, dominantBaseline: string } {
+function getAnchorProps(anchor: TextAnchor = 'top-left', fontSize: number = 24): { textAnchor: string, yOffset: number } {
   const parts = anchor.split('-');
   const yAlign = parts.length === 2 ? parts[0] : parts[0] === 'center' ? 'middle' : parts[0];
   const xAlign = parts.length === 2 ? parts[1] : parts[0] === 'center' ? 'center' : 'left';
 
-  let dominantBaseline = 'hanging'; // top
-  if (yAlign === 'bottom') dominantBaseline = 'auto'; // bottom is harder, usually means using y directly on baseline, but we can do mathematical offset. We'll rely on SVG baselines.
-  else if (yAlign === 'middle' || yAlign === 'center') dominantBaseline = 'middle';
-  else if (yAlign === 'auto') dominantBaseline = 'auto';
-  // Sharp's librsvg supports dominant-baseline: text-before-edge (top), middle, alphabetic (bottom)
-  const baselineMap: Record<string, string> = { top: 'text-before-edge', middle: 'middle', bottom: 'alphabetic', center: 'middle' };
+  // librsvg does NOT reliably support dominant-baseline values other than 'auto' (alphabetic).
+  // Instead of relying on dominant-baseline, we compute a y-offset to position text correctly.
+  // With 'auto' (alphabetic baseline), y = text baseline (bottom of caps).
+  // To make y = text top, we shift down by ~0.8 * fontSize.
+  // To make y = text middle, we shift down by ~0.35 * fontSize.
+  let yOffset = 0;
+  if (yAlign === 'top') {
+    yOffset = Math.round(fontSize * 0.8);
+  } else if (yAlign === 'middle' || yAlign === 'center') {
+    yOffset = Math.round(fontSize * 0.35);
+  }
+  // 'bottom' / 'auto' → yOffset = 0 (alphabetic baseline is already at y)
 
   let textAnchor = 'start';
   if (xAlign === 'center') textAnchor = 'middle';
   else if (xAlign === 'right') textAnchor = 'end';
 
-  return { textAnchor, dominantBaseline: baselineMap[yAlign] || 'text-before-edge' };
+  return { textAnchor, yOffset };
 }
 
 export async function addText(input: ImageInput, options: { layers: TextLayer[] }): Promise<ImageResult> {
@@ -82,14 +88,16 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
       const totalHeight = lines.length * fontSize * lineHeight;
       const approxMaxWidth = Math.max(...lines.map(l => l.length * fontSize * 0.6));
 
-      const { textAnchor, dominantBaseline } = getAnchorProps(layer.anchor);
+      const { textAnchor, yOffset } = getAnchorProps(layer.anchor, fontSize);
+      const renderY = layer.y + yOffset;
 
       let align = textAnchor;
       if (layer.align) {
         align = layer.align === 'left' ? 'start' : layer.align === 'right' ? 'end' : 'middle';
       }
 
-      const style = `font-family: ${fontFamily}; font-size: ${fontSize}px; fill: ${color}; opacity: ${opacity}; text-anchor: ${align}; dominant-baseline: ${dominantBaseline};`;
+      // Always use dominant-baseline: auto (alphabetic) — the only value librsvg reliably supports
+      const style = `font-family: ${fontFamily}; font-size: ${fontSize}px; fill: ${color}; opacity: ${opacity}; text-anchor: ${align}; dominant-baseline: auto;`;
       
       let layerSvg = '';
 
@@ -99,6 +107,7 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
         const bgOpacity = bg.opacity ?? 1.0;
         const radius = bg.borderRadius ?? 0;
 
+        // Background rect is positioned relative to the *intended* y (layer.y), not renderY
         let rectX = layer.x - pad;
         let rectY = layer.y - pad;
         
@@ -108,16 +117,19 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
           rectX = layer.x - approxMaxWidth - pad;
         }
 
-        if (dominantBaseline === 'middle') {
+        // Adjust for anchor vertical alignment
+        const parts = (layer.anchor ?? 'top-left').split('-');
+        const vAlign = parts.length === 2 ? parts[0] : parts[0] === 'center' ? 'middle' : parts[0];
+        if (vAlign === 'middle' || vAlign === 'center') {
           rectY = layer.y - (totalHeight / 2) - pad;
-        } else if (dominantBaseline === 'alphabetic') { // bottom
+        } else if (vAlign === 'bottom') {
           rectY = layer.y - totalHeight - pad + fontSize;
         }
 
         layerSvg += `<rect x="${rectX}" y="${rectY}" width="${approxMaxWidth + pad * 2}" height="${totalHeight + pad * 2}" fill="${bg.color}" opacity="${bgOpacity}" rx="${radius}" ry="${radius}" />`;
       }
 
-      layerSvg += `<text x="${layer.x}" y="${layer.y}" style="${style}">`;
+      layerSvg += `<text x="${layer.x}" y="${renderY}" style="${style}">`;
       lines.forEach((line, idx) => {
         let dy = idx === 0 ? 0 : fontSize * lineHeight;
         layerSvg += `<tspan x="${layer.x}" dy="${dy}">${escapeXml(line)}</tspan>`;
@@ -126,13 +138,16 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
 
       svgBody += `<g style="isolation: isolate">${layerSvg}</g>`;
 
-      // Compute bounding box for overflow detection
+      // Compute bounding box for overflow detection (using intended y, not renderY)
       let boxX = layer.x;
       let boxY = layer.y;
       if (textAnchor === 'middle') boxX -= approxMaxWidth / 2;
       else if (textAnchor === 'end') boxX -= approxMaxWidth;
-      if (dominantBaseline === 'middle') boxY -= totalHeight / 2;
-      else if (dominantBaseline === 'alphabetic') boxY -= totalHeight - fontSize;
+      
+      const anchorParts = (layer.anchor ?? 'top-left').split('-');
+      const vAlignBox = anchorParts.length === 2 ? anchorParts[0] : anchorParts[0] === 'center' ? 'middle' : anchorParts[0];
+      if (vAlignBox === 'middle' || vAlignBox === 'center') boxY -= totalHeight / 2;
+      else if (vAlignBox === 'bottom') boxY -= totalHeight - fontSize;
 
       const boxBottom = boxY + totalHeight;
       const boxRight = boxX + approxMaxWidth;
