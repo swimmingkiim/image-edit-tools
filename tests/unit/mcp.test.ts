@@ -75,9 +75,7 @@ describe('MCP E2E', () => {
     const content = result.content as any[];
     const res = JSON.parse(content[0].text);
     expect(res.ok).toBe(true);
-    // converted outputs will be a data URI of format image/png by default if we don't infer it correctly,
-    // but the test primarily checks it outputs a data URI wrapper.
-    expect(res.data).toMatch(/^data:image\/[a-z]+;base64,/);
+    expect(res.data).toMatch(/^data:image\/jpeg;base64,/);
   });
 
   it('handles unknown tool call gracefully by returning correct JSON error structure', async () => {

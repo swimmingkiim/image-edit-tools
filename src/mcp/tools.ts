@@ -267,8 +267,9 @@ export async function handleTool(name: string, args: Record<string, any>): Promi
   if (result && !result.ok) {
     return JSON.stringify({ error: result.error, code: result.code });
   } else if (result && Buffer.isBuffer(result.data)) {
+    const fmt = args.format || 'png';
     const b64 = result.data.toString('base64');
-    return JSON.stringify({ ok: true, data: `data:image/png;base64,${b64}` });
+    return JSON.stringify({ ok: true, data: `data:image/${fmt};base64,${b64}` });
   }
 
   return JSON.stringify(result);
