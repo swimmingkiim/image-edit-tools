@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { addText } from '../../src/ops/add-text.js'
+import sharp from 'sharp'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -73,5 +74,114 @@ describe('addText', () => {
     if (!result.ok) return
     expect((result as any).bounds).toBeDefined()
     expect((result as any).bounds.contentBottom).toBeGreaterThan(50)
+  })
+
+  // ── Spans tests ─────────────────────────────────────────────────────────────
+
+  describe('spans', () => {
+    it('renders mixed bold+normal spans in one line', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: '',
+          x: 20, y: 50, fontSize: 28, color: '#333',
+          spans: [
+            { text: 'normal ' },
+            { text: 'bold part', bold: true, color: '#000' },
+          ]
+        }]
+      })
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      const meta = await sharp(result.data).metadata()
+      expect(meta.width).toBe(400)
+    })
+
+    it('renders italic and custom fontSize spans', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: '',
+          x: 20, y: 50, fontSize: 24, color: '#333',
+          spans: [
+            { text: 'normal ' },
+            { text: 'italic small', italic: true, fontSize: 16, color: '#666' },
+          ]
+        }]
+      })
+      expect(result.ok).toBe(true)
+    })
+
+    it('handles newline in span text', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: '',
+          x: 20, y: 50, fontSize: 24, color: '#333',
+          spans: [
+            { text: 'line one\n' },
+            { text: 'line two', bold: true },
+          ]
+        }]
+      })
+      expect(result.ok).toBe(true)
+    })
+
+    it('renders highlight background behind span', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: '',
+          x: 20, y: 50, fontSize: 24, color: '#333',
+          spans: [
+            { text: 'highlighted', highlight: '#FFFF00' },
+            { text: ' normal' },
+          ]
+        }]
+      })
+      expect(result.ok).toBe(true)
+    })
+
+    it('warns when maxWidth used with spans', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: '',
+          x: 20, y: 50, fontSize: 24, color: '#333',
+          maxWidth: 200,
+          spans: [{ text: 'hello' }]
+        }]
+      })
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.warnings).toContain(
+        'maxWidth is not supported with spans'
+      )
+    })
+
+    it('warns when both text and spans are provided', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: 'this should be ignored',
+          x: 20, y: 50, fontSize: 24, color: '#333',
+          spans: [{ text: 'spans win' }]
+        }]
+      })
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.warnings).toContain(
+        'text field ignored when spans is provided'
+      )
+    })
+
+    it('renders spans with background box', async () => {
+      const result = await addText(sampleJpeg, {
+        layers: [{
+          text: '',
+          x: 20, y: 50, fontSize: 24, color: '#333',
+          background: { color: '#EEE', padding: 8 },
+          spans: [
+            { text: 'with ' },
+            { text: 'background', bold: true },
+          ]
+        }]
+      })
+      expect(result.ok).toBe(true)
+    })
   })
 })

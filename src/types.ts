@@ -112,6 +112,26 @@ export interface TextBackground {
   borderRadius?: number;
 }
 
+/**
+ * A styled inline span within a text layer.
+ * Each span maps to a single SVG `<tspan>` element.
+ * Unset fields inherit from the parent `TextLayer`.
+ */
+export interface TextSpan {
+  /** The text content for this span */
+  text: string;
+  /** Override color for this span. Inherits `layer.color` if omitted. */
+  color?: string;
+  /** If true, renders with `font-weight: bold` */
+  bold?: boolean;
+  /** If true, renders with `font-style: italic` */
+  italic?: boolean;
+  /** Override fontSize for this span. Inherits `layer.fontSize` if omitted. */
+  fontSize?: number;
+  /** Background highlight color for this span */
+  highlight?: string;
+}
+
 export interface TextLayer {
   text: string;
   x: number;
@@ -134,6 +154,17 @@ export interface TextLayer {
   stroke?: { color: string; width: number };
   /** Text shadow */
   textShadow?: { color: string; offsetX: number; offsetY: number; blur?: number };
+  /**
+   * Inline mixed-style spans.
+   * When provided, `text` field is ignored and this array is rendered instead.
+   * Use `\n` within span text or a separate `{ text: '\n' }` span for line breaks.
+   * @example
+   * spans: [
+   *   { text: '캠핑장, 북스테이 등 ' },
+   *   { text: '다양한 주제별 숙소 추천', bold: true, color: '#1A1A1A' },
+   * ]
+   */
+  spans?: TextSpan[];
 }
 
 // ─── Composite ────────────────────────────────────────────────────────────────
