@@ -1,0 +1,43 @@
+{
+  "name": "image-edit-tools",
+  "version": "1.0.0",
+  "description": "Deterministic image editing SDK for AI agents. Ships with MCP tools.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "image-edit-tools": "./dist/mcp/server.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./mcp": "./dist/mcp/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "vitest run tests/e2e",
+    "docs": "typedoc --out docs/api src/index.ts",
+    "prepublishOnly": "npm run build && npm run test:coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.1.0",
+    "color-thief-node": "^1.0.4",
+    "node-fetch": "^3.3.2",
+    "sharp": "^0.33.5",
+    "tesseract.js": "^5.1.1",
+    "@xenova/transformers": "^2.17.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@vitest/coverage-v8": "^1.6.0",
+    "typedoc": "^0.25.13",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
+  "keywords": ["image", "editing", "mcp", "ai-agent", "claude", "sharp", "typescript"],
+  "license": "MIT"
+}
