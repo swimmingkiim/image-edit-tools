@@ -66,6 +66,8 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
     let defs = '';
     let svgBody = '';
     let fontImports = new Set<string>();
+    const warnings: string[] = [];
+    let contentBottom = 0;
 
     for (let i = 0; i < options.layers.length; i++) {
       const layer = options.layers[i];
@@ -123,6 +125,24 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
       layerSvg += `</text>`;
 
       svgBody += `<g style="isolation: isolate">${layerSvg}</g>`;
+
+      // Compute bounding box for overflow detection
+      let boxX = layer.x;
+      let boxY = layer.y;
+      if (textAnchor === 'middle') boxX -= approxMaxWidth / 2;
+      else if (textAnchor === 'end') boxX -= approxMaxWidth;
+      if (dominantBaseline === 'middle') boxY -= totalHeight / 2;
+      else if (dominantBaseline === 'alphabetic') boxY -= totalHeight - fontSize;
+
+      const boxBottom = boxY + totalHeight;
+      const boxRight = boxX + approxMaxWidth;
+      if (boxBottom > contentBottom) contentBottom = boxBottom;
+
+      if (boxX < 0 || boxY < 0 || boxRight > width || boxBottom > height) {
+        warnings.push(
+          `Text layer ${i} ("${layer.text.slice(0, 20)}...") extends beyond canvas bounds.`
+        );
+      }
     }
 
     const fontStyle = fontImports.size > 0 ? `<style>${Array.from(fontImports).join('\n')}</style>` : '';
@@ -137,7 +157,9 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
       .composite([{ input: Buffer.from(svgString), blend: 'over' }])
       .toBuffer();
     
-    return ok(output);
+    const result = ok(output, warnings);
+    (result as any).bounds = { contentBottom: Math.round(contentBottom) };
+    return result;
   } catch (e: any) {
     const msg = e.message || '';
     if (msg.includes('HTTP')) return err(msg, ErrorCode.FETCH_FAILED);

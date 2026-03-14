@@ -11,7 +11,7 @@ export type ImageInput = Buffer | string;
 
 // ─── Result ───────────────────────────────────────────────────────────────────
 
-export type Ok<T> = { ok: true; data: T };
+export type Ok<T> = { ok: true; data: T; warnings?: string[] };
 export type Err = { ok: false; error: string; code: ErrorCode };
 export type Result<T> = Ok<T> | Err;
 export type ImageResult = Result<Buffer>;

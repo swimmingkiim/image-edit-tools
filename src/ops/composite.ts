@@ -38,6 +38,28 @@ export async function composite(input: ImageInput, options: { layers: CompositeL
 
     const overlays = await Promise.all(options.layers.map(loadLayer));
 
+    // Detect potentially problematic opaque layers
+    const warnings: string[] = [];
+    const baseMeta = await sharp(buffer).metadata();
+    const canvasArea = (baseMeta.width ?? 1) * (baseMeta.height ?? 1);
+
+    for (let i = 0; i < options.layers.length; i++) {
+      const layer = options.layers[i];
+      const layerOpacity = layer.opacity ?? 1.0;
+      if (layerOpacity >= 0.9) {
+        try {
+          const layerBuf = await loadImage(layer.image);
+          const layerMeta = await sharp(layerBuf).metadata();
+          const layerArea = (layerMeta.width ?? 0) * (layerMeta.height ?? 0);
+          if (layerArea / canvasArea > 0.25) {
+            warnings.push(
+              `Layer ${i} is opaque (opacity=${layerOpacity}) and covers ${Math.round(layerArea / canvasArea * 100)}% of the canvas. It may hide content underneath.`
+            );
+          }
+        } catch { /* skip analysis for unreadable layers */ }
+      }
+    }
+
     let output = buffer;
     if (overlays.length > 0) {
       output = await sharp(buffer)
@@ -45,7 +67,7 @@ export async function composite(input: ImageInput, options: { layers: CompositeL
         .toBuffer();
     }
     
-    return ok(output);
+    return ok(output, warnings);
   } catch (e: any) {
     const msg = e.message || '';
     if (msg.includes('HTTP')) return err(msg, ErrorCode.FETCH_FAILED);

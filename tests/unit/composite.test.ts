@@ -55,4 +55,16 @@ describe('composite', () => {
     if (result.ok) return
     expect(result.code).toBe('INVALID_INPUT')
   })
+
+  it('warns when opaque layer covers large area', async () => {
+    // sampleJpeg is 400x300 = 120000 pixels, logoPng is 100x100 = 10000 pixels (8.3% — no warning)
+    const result = await composite(sampleJpeg, {
+      layers: [{ image: sampleJpeg, x: 0, y: 0 }]
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.warnings).toBeDefined()
+    expect(result.warnings!.length).toBeGreaterThan(0)
+    expect(result.warnings![0]).toContain('may hide content')
+  })
 })

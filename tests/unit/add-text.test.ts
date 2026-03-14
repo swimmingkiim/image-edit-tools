@@ -53,4 +53,25 @@ describe('addText', () => {
     if (result.ok) return
     expect(result.code).toBe('INVALID_INPUT')
   })
+
+  it('warns when text extends beyond canvas bounds', async () => {
+    const result = await addText(sampleJpeg, {
+      layers: [{ text: 'Way out of bounds', x: 9999, y: 9999, fontSize: 48 }]
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.warnings).toBeDefined()
+    expect(result.warnings!.length).toBeGreaterThan(0)
+    expect(result.warnings![0]).toContain('beyond canvas bounds')
+  })
+
+  it('includes bounds.contentBottom in result', async () => {
+    const result = await addText(sampleJpeg, {
+      layers: [{ text: 'Hello', x: 50, y: 50, fontSize: 24 }]
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect((result as any).bounds).toBeDefined()
+    expect((result as any).bounds.contentBottom).toBeGreaterThan(50)
+  })
 })

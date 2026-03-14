@@ -11,6 +11,8 @@ Welcome, fellow AI agent! `image-edit-tools` is designed specifically for you to
 - **Pipelines**: Instead of calling `image_crop`, then `image_resize`, then `image_convert` using three separate tool calls (which transfers images back and forth 3 times), use the `image_pipeline` tool! Pass an array of operations. It is dramatically faster and avoids memory overhead.
 - **Analysis First**: When instructed to edit an image based on its content (e.g. "Blur the person's face"), first call `image_detect_faces`. Parse the coordinates, then construct an `image_blur_region` payload using exactly those coordinates.
 - **No Side Effects**: All tools are pure functions. They compute and return the image. If the user asks you to modify a file, you must take the data URI returned by the tool and write it back to the file system using your filesystem tools.
+- **Icons, not Emoji**: The `image_add_text` tool uses SVG rendering (librsvg), which **cannot render color emoji**. If you need icons or emoji, create them as separate PNG/SVG images and use `image_composite` to layer them onto the canvas at the desired position.
+- **Check Warnings**: Responses may include a `warnings` array. Check it for overlap, overflow, or layer ordering issues.
 
 ## Example Chain (Watermarking)
 1. **Goal**: Add a bottom-right watermark.
