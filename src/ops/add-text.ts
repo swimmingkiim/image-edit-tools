@@ -24,6 +24,15 @@ function wrapText(text: string, fontSize: number, maxWidth?: number): string[] {
   return lines;
 }
 
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 function getAnchorProps(anchor: TextAnchor = 'top-left'): { textAnchor: string, dominantBaseline: string } {
   const parts = anchor.split('-');
   const yAlign = parts.length === 2 ? parts[0] : parts[0] === 'center' ? 'middle' : parts[0];
@@ -109,7 +118,7 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
       layerSvg += `<text x="${layer.x}" y="${layer.y}" style="${style}">`;
       lines.forEach((line, idx) => {
         let dy = idx === 0 ? 0 : fontSize * lineHeight;
-        layerSvg += `<tspan x="${layer.x}" dy="${dy}">${line}</tspan>`;
+        layerSvg += `<tspan x="${layer.x}" dy="${dy}">${escapeXml(line)}</tspan>`;
       });
       layerSvg += `</text>`;
 
