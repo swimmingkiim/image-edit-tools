@@ -3,14 +3,22 @@ import { loadImage } from '../utils/load-image.js';
 import { err, ok } from '../utils/result.js';
 import { getImageMetadata } from '../utils/validate.js';
 import sharp from 'sharp';
-import { AutoModel, AutoProcessor, RawImage } from '@xenova/transformers';
 
 export async function detectSubject(input: ImageInput): Promise<Result<BoundingBox[]>> {
   try {
     const buffer = await loadImage(input);
     const meta = await getImageMetadata(buffer);
     
-    let model: any, processor: any;
+    let model: any, processor: any, AutoModel: any, AutoProcessor: any, RawImage: any;
+    try {
+      const tf = await import('@xenova/transformers');
+      AutoModel = tf.AutoModel;
+      AutoProcessor = tf.AutoProcessor;
+      RawImage = tf.RawImage;
+    } catch (e: any) {
+      return err('Failed to load @xenova/transformers (check architecture bindings).', ErrorCode.PROCESSING_FAILED);
+    }
+
     try {
       model = await AutoModel.from_pretrained('briaai/RMBG-1.4', {
         config: { model_type: 'custom' },

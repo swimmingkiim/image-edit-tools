@@ -10,7 +10,6 @@ import { composite } from './composite.js';
 import { watermark } from './watermark.js';
 import { convert } from './convert.js';
 import { optimize } from './optimize.js';
-import { removeBg } from './remove-bg.js';
 
 export async function pipeline(input: ImageInput, operations: PipelineOperation[]): Promise<ImageResult & { step?: number }> {
   let currentImage = input;
@@ -32,7 +31,11 @@ export async function pipeline(input: ImageInput, operations: PipelineOperation[
         case 'watermark': result = await watermark(currentImage, op); break;
         case 'convert': result = await convert(currentImage, op); break;
         case 'optimize': result = await optimize(currentImage, op); break;
-        case 'removeBg': result = await removeBg(currentImage, op); break;
+        case 'removeBg': {
+          const { removeBg } = await import('./remove-bg.js');
+          result = await removeBg(currentImage, op);
+          break;
+        }
         default:
           return { ok: false, error: `Unknown operation`, code: ErrorCode.INVALID_INPUT, step: i };
       }

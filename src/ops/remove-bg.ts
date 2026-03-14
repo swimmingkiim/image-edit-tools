@@ -3,14 +3,22 @@ import { RemoveBgOptions, ImageInput, ImageResult, ErrorCode } from '../types.js
 import { loadImage } from '../utils/load-image.js';
 import { err, ok } from '../utils/result.js';
 import { getImageMetadata } from '../utils/validate.js';
-import { AutoModel, AutoProcessor, RawImage } from '@xenova/transformers';
 
 export async function removeBg(input: ImageInput, options: RemoveBgOptions = {}): Promise<ImageResult> {
   try {
     const buffer = await loadImage(input);
     const meta = await getImageMetadata(buffer);
     
-    let model: any, processor: any;
+    let model: any, processor: any, AutoModel: any, AutoProcessor: any, RawImage: any;
+    try {
+      const tf = await import('@xenova/transformers');
+      AutoModel = tf.AutoModel;
+      AutoProcessor = tf.AutoProcessor;
+      RawImage = tf.RawImage;
+    } catch (e: any) {
+      return err('Failed to load @xenova/transformers (check architecture bindings).', ErrorCode.PROCESSING_FAILED);
+    }
+
     try {
       model = await AutoModel.from_pretrained('briaai/RMBG-1.4', {
         config: { model_type: 'custom' },
@@ -33,8 +41,6 @@ export async function removeBg(input: ImageInput, options: RemoveBgOptions = {})
     }
 
     // Process image
-    const rawImage = await RawImage.fromURL(URL.createObjectURL(new Blob([buffer]))); // Alternative for node:
-    // RawImage from buffer is easier using sharp. We need uint8 array of RGB or RGBA.
     const rawRgb = await sharp(buffer).ensureAlpha().raw().toBuffer();
     const img = new RawImage(new Uint8ClampedArray(rawRgb), meta.width, meta.height, 4);
 

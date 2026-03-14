@@ -12,6 +12,8 @@ A TypeScript-first, deterministic, purely functional image editing SDK designed 
 npm install image-edit-tools
 ```
 
+> **Note**: AI features (`removeBg`, `detectFaces`, `detectSubject`) require `@xenova/transformers`, which is an optional dependency. All other 16+ operations work out of the box on any platform with just Node.js and sharp.
+
 ## Quick Start (Code)
 ```typescript
 import { crop, resize, pad } from 'image-edit-tools';

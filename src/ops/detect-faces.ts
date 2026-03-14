@@ -1,15 +1,22 @@
 import { BoundingBox, ImageInput, Result, ErrorCode } from '../types.js';
 import { loadImage } from '../utils/load-image.js';
 import { ok, err } from '../utils/result.js';
-import { pipeline, RawImage } from '@xenova/transformers';
 import sharp from 'sharp';
 
 export async function detectFaces(input: ImageInput): Promise<Result<BoundingBox[]>> {
   try {
     const buffer = await loadImage(input);
-    let detector: any;
+    let detector: any, pipeline_tf: any, RawImage: any;
     try {
-      detector = await pipeline('object-detection', 'Xenova/detr-resnet-50', {
+      const tf = await import('@xenova/transformers');
+      pipeline_tf = tf.pipeline;
+      RawImage = tf.RawImage;
+    } catch (e: any) {
+      return err('Failed to load @xenova/transformers (check architecture bindings).', ErrorCode.PROCESSING_FAILED);
+    }
+    
+    try {
+      detector = await pipeline_tf('object-detection', 'Xenova/detr-resnet-50', {
         quantized: true,
       });
     } catch (e) {
