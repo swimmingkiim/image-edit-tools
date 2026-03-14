@@ -1,8 +1,12 @@
 /**
  * Instagram Card News Generator
  * 
- * Demonstrates: addText, composite, sharp SVG generation
+ * Demonstrates: addText (spans, fontUrl auto-fetch), composite, sharp SVG generation
  * Output: 1080x1080 Instagram carousel slides (cover + 3 content + closing)
+ * 
+ * Fonts (auto-downloaded & cached via fontUrl):
+ *   - Jua: Korean display font (headings)
+ *   - Poppins: Latin body font (descriptions, code)
  * 
  * NOTE: librsvg cannot render color emoji. This example uses composite()
  *       with SVG-generated icon shapes instead of emoji in addText().
@@ -33,6 +37,10 @@ const PALETTE = {
   highlight:'#F59E0B',
   purple:   '#8B5CF6',
 };
+
+// ── Font URLs (auto-fetched & cached by resolveFontUrl) ─────────────────────
+const FONT_JUA = 'https://fonts.googleapis.com/css2?family=Jua&display=swap';
+const FONT_POPPINS = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap';
 
 // ── SVG Shape Helpers ────────────────────────────────────────────────────────
 async function canvas(color: string): Promise<Buffer> {
@@ -166,10 +174,35 @@ async function slide1_cover(): Promise<Buffer> {
   ]).png().toBuffer();
 
   const result = await addText(bg, { layers: [
-    { text: 'Image Edit Tools', x: SIZE / 2, y: 340, fontSize: 56, color: PALETTE.text, anchor: 'top-center' },
-    { text: 'AI Agent Image Editing SDK', x: SIZE / 2, y: 420, fontSize: 32, color: PALETTE.highlight, anchor: 'top-center' },
-    { text: 'TypeScript  /  Sharp  /  MCP', x: SIZE / 2, y: 520, fontSize: 28, color: PALETTE.muted, anchor: 'top-center' },
-    { text: 'Swipe to learn more', x: SIZE / 2, y: 950, fontSize: 24, color: PALETTE.muted, anchor: 'top-center' },
+    {
+      text: 'Image Edit Tools',
+      x: SIZE / 2, y: 340, fontSize: 56, color: PALETTE.text,
+      anchor: 'top-center',
+      fontFamily: 'Jua', fontUrl: FONT_JUA,
+    },
+    {
+      text: '',
+      x: SIZE / 2, y: 420, fontSize: 32,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      color: PALETTE.highlight,
+      spans: [
+        { text: 'AI Agent ', color: PALETTE.highlight },
+        { text: 'Image Editing SDK', bold: true, color: '#FFFFFF' },
+      ],
+    },
+    {
+      text: 'TypeScript  /  Sharp  /  MCP',
+      x: SIZE / 2, y: 520, fontSize: 28, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
+    {
+      text: 'Swipe to learn more',
+      x: SIZE / 2, y: 950, fontSize: 24, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
   ]});
   if (!result.ok) throw new Error(result.error);
   return result.data;
@@ -210,9 +243,14 @@ async function slide2_features(): Promise<Buffer> {
     ]).png().toBuffer();
   }
 
-  // Text layers (no emoji)
-  const textLayers = [
-    { text: 'Key Features', x: SIZE / 2, y: 40, fontSize: 40, color: '#FFFFFF', anchor: 'top-center' as const },
+  // Text layers
+  const textLayers: Parameters<typeof addText>[1]['layers'] = [
+    {
+      text: 'Key Features',
+      x: SIZE / 2, y: 40, fontSize: 40, color: '#FFFFFF',
+      anchor: 'top-center',
+      fontFamily: 'Jua', fontUrl: FONT_JUA,
+    },
   ];
 
   for (let i = 0; i < features.length; i++) {
@@ -222,14 +260,27 @@ async function slide2_features(): Promise<Buffer> {
     const y = startY + row * (cardH + gap);
 
     textLayers.push(
-      { text: features[i].title, x: x + 80, y: y + 35, fontSize: 28, color: PALETTE.text, anchor: 'top-left' as const },
-      { text: features[i].desc, x: x + 25, y: y + 110, fontSize: 22, color: PALETTE.muted, anchor: 'top-left' as const },
+      {
+        text: features[i].title,
+        x: x + 80, y: y + 35, fontSize: 28, color: PALETTE.text,
+        anchor: 'top-left',
+        fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      },
+      {
+        text: features[i].desc,
+        x: x + 25, y: y + 110, fontSize: 22, color: PALETTE.muted,
+        anchor: 'top-left',
+        fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      },
     );
   }
 
-  textLayers.push(
-    { text: '2 / 5', x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted, anchor: 'top-center' as const },
-  );
+  textLayers.push({
+    text: '2 / 5',
+    x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted,
+    anchor: 'top-center',
+    fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+  });
 
   const res = await addText(bg, { layers: textLayers });
   if (!res.ok) throw new Error(res.error);
@@ -265,8 +316,18 @@ async function slide3_code(): Promise<Buffer> {
   ];
 
   const codeLayers: Parameters<typeof addText>[1]['layers'] = [
-    { text: 'Code Example', x: SIZE / 2, y: 160, fontSize: 40, color: PALETTE.text, anchor: 'top-center' },
-    { text: 'Edit images in just a few lines', x: SIZE / 2, y: 215, fontSize: 24, color: PALETTE.muted, anchor: 'top-center' },
+    {
+      text: 'Code Example',
+      x: SIZE / 2, y: 160, fontSize: 40, color: PALETTE.text,
+      anchor: 'top-center',
+      fontFamily: 'Jua', fontUrl: FONT_JUA,
+    },
+    {
+      text: 'Edit images in just a few lines',
+      x: SIZE / 2, y: 215, fontSize: 24, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
   ];
 
   codeLines.forEach((line, i) => {
@@ -279,12 +340,16 @@ async function slide3_code(): Promise<Buffer> {
     codeLayers.push({
       text: line, x: 120, y: 285 + i * 38,
       fontSize: 24, color, anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
     });
   });
 
-  codeLayers.push(
-    { text: '3 / 5', x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted, anchor: 'top-center' },
-  );
+  codeLayers.push({
+    text: '3 / 5',
+    x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted,
+    anchor: 'top-center',
+    fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+  });
 
   const res = await addText(bg, { layers: codeLayers });
   if (!res.ok) throw new Error(res.error);
@@ -314,19 +379,73 @@ async function slide4_mcp(): Promise<Buffer> {
   ]).png().toBuffer();
 
   const res = await addText(bg, { layers: [
-    { text: 'MCP Integration', x: SIZE / 2, y: 140, fontSize: 44, color: PALETTE.text, anchor: 'top-center' },
-    { text: 'Use directly from AI agents', x: SIZE / 2, y: 200, fontSize: 26, color: PALETTE.muted, anchor: 'top-center' },
+    {
+      text: 'MCP Integration',
+      x: SIZE / 2, y: 140, fontSize: 44, color: PALETTE.text,
+      anchor: 'top-center',
+      fontFamily: 'Jua', fontUrl: FONT_JUA,
+    },
+    {
+      text: 'Use directly from AI agents',
+      x: SIZE / 2, y: 200, fontSize: 26, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
 
-    { text: 'npm install', x: 170, y: 310, fontSize: 26, color: PALETTE.highlight, anchor: 'top-left' },
-    { text: 'Install image-edit-tools', x: 170, y: 355, fontSize: 22, color: PALETTE.muted, anchor: 'top-left' },
+    {
+      text: '', x: 170, y: 310, fontSize: 26,
+      anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      color: PALETTE.text,
+      spans: [
+        { text: 'npm install', bold: true, color: PALETTE.highlight },
+      ],
+    },
+    {
+      text: 'Install image-edit-tools',
+      x: 170, y: 355, fontSize: 22, color: PALETTE.muted,
+      anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
 
-    { text: 'Add MCP config', x: 170, y: 510, fontSize: 26, color: PALETTE.highlight, anchor: 'top-left' },
-    { text: 'Edit claude_desktop_config.json', x: 170, y: 555, fontSize: 22, color: PALETTE.muted, anchor: 'top-left' },
+    {
+      text: '', x: 170, y: 510, fontSize: 26,
+      anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      color: PALETTE.text,
+      spans: [
+        { text: 'Add MCP config', bold: true, color: PALETTE.highlight },
+      ],
+    },
+    {
+      text: 'Edit claude_desktop_config.json',
+      x: 170, y: 555, fontSize: 22, color: PALETTE.muted,
+      anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
 
-    { text: 'Ask the AI', x: 170, y: 710, fontSize: 26, color: PALETTE.highlight, anchor: 'top-left' },
-    { text: 'Crop this photo to 1080x1080', x: 170, y: 755, fontSize: 22, color: PALETTE.muted, anchor: 'top-left' },
+    {
+      text: '', x: 170, y: 710, fontSize: 26,
+      anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      color: PALETTE.text,
+      spans: [
+        { text: 'Ask the AI', bold: true, color: PALETTE.highlight },
+      ],
+    },
+    {
+      text: 'Crop this photo to 1080x1080',
+      x: 170, y: 755, fontSize: 22, color: PALETTE.muted,
+      anchor: 'top-left',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
 
-    { text: '4 / 5', x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted, anchor: 'top-center' },
+    {
+      text: '4 / 5',
+      x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
   ]});
   if (!res.ok) throw new Error(res.error);
   return res.data;
@@ -349,11 +468,40 @@ async function slide5_cta(): Promise<Buffer> {
   ]).png().toBuffer();
 
   const res = await addText(bg, { layers: [
-    { text: 'Get Started', x: SIZE / 2, y: 380, fontSize: 48, color: PALETTE.text, anchor: 'top-center' },
-    { text: 'npm install image-edit-tools', x: SIZE / 2, y: 480, fontSize: 30, color: PALETTE.highlight, anchor: 'top-center' },
-    { text: 'Install Now', x: SIZE / 2, y: 670, fontSize: 28, color: '#FFFFFF', anchor: 'top-center' },
-    { text: 'github.com/swimmingkiim/image-edit-tools', x: SIZE / 2, y: 820, fontSize: 22, color: PALETTE.muted, anchor: 'top-center' },
-    { text: '5 / 5', x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted, anchor: 'top-center' },
+    {
+      text: 'Get Started',
+      x: SIZE / 2, y: 380, fontSize: 48, color: PALETTE.text,
+      anchor: 'top-center',
+      fontFamily: 'Jua', fontUrl: FONT_JUA,
+    },
+    {
+      text: '', x: SIZE / 2, y: 480, fontSize: 30,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+      color: PALETTE.highlight,
+      spans: [
+        { text: 'npm install ', color: PALETTE.muted },
+        { text: 'image-edit-tools', bold: true, color: PALETTE.highlight },
+      ],
+    },
+    {
+      text: 'Install Now',
+      x: SIZE / 2, y: 670, fontSize: 28, color: '#FFFFFF',
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
+    {
+      text: 'github.com/swimmingkiim/image-edit-tools',
+      x: SIZE / 2, y: 820, fontSize: 22, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
+    {
+      text: '5 / 5',
+      x: SIZE / 2, y: 980, fontSize: 20, color: PALETTE.muted,
+      anchor: 'top-center',
+      fontFamily: 'Poppins', fontUrl: FONT_POPPINS,
+    },
   ]});
   if (!res.ok) throw new Error(res.error);
   return res.data;
@@ -364,6 +512,7 @@ async function slide5_cta(): Promise<Buffer> {
 // ═══════════════════════════════════════════════════════════════════════════════
 async function main() {
   console.log('Generating Instagram card news slides...\n');
+  console.log('Fonts: Jua (display) + Poppins (body) — auto-downloaded via fontUrl\n');
 
   const slides = [
     { name: 'slide-1-cover',    fn: slide1_cover },
