@@ -1,1 +1,0 @@
-{"version":3,"file":"detect-faces.d.ts","sourceRoot":"","sources":["../../src/ops/detect-faces.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,WAAW,EAAE,UAAU,EAAE,MAAM,EAAa,MAAM,aAAa,CAAC;AAMzE,wBAAsB,WAAW,CAAC,KAAK,EAAE,UAAU,GAAG,OAAO,CAAC,MAAM,CAAC,WAAW,EAAE,CAAC,CAAC,CAkCnF"}
