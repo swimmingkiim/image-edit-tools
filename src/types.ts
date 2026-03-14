@@ -128,6 +128,12 @@ export interface TextLayer {
   maxWidth?: number;
   lineHeight?: number;
   background?: TextBackground;
+  /** Letter spacing in pixels. Default: 0 */
+  letterSpacing?: number;
+  /** Text stroke (outline) */
+  stroke?: { color: string; width: number };
+  /** Text shadow */
+  textShadow?: { color: string; offsetX: number; offsetY: number; blur?: number };
 }
 
 // ─── Composite ────────────────────────────────────────────────────────────────
@@ -245,6 +251,94 @@ export interface ImageMetadata {
   exif?: Record<string, unknown>;
 }
 
+// ─── Rotate ───────────────────────────────────────────────────────────────────
+
+export interface RotateOptions {
+  /** Rotation angle in degrees (0–360). Positive = clockwise. */
+  angle: number;
+  /** Background color for exposed areas. Default: 'transparent' */
+  background?: string;
+}
+
+// ─── GradientOverlay ──────────────────────────────────────────────────────────
+
+export type GradientDirection = 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+export interface GradientOverlayOptions {
+  /** Direction the gradient fades FROM (opaque end). Default: 'bottom' */
+  direction?: GradientDirection;
+  /** Gradient color. Default: '#000000' */
+  color?: string;
+  /** Opacity of the opaque end. 0–1. Default: 0.7 */
+  opacity?: number;
+  /** How much of the image the gradient covers. 0–1. Default: 0.5 */
+  coverage?: number;
+}
+
+// ─── ClipToShape ──────────────────────────────────────────────────────────────
+
+export type ClipShape = 'circle' | 'ellipse' | 'rounded-rect';
+
+export interface ClipToShapeOptions {
+  shape: ClipShape;
+  /** Border radius for 'rounded-rect'. Default: 32 */
+  borderRadius?: number;
+}
+
+// ─── DrawShape ────────────────────────────────────────────────────────────────
+
+export type ShapeType = 'rect' | 'circle' | 'ellipse' | 'line';
+
+export interface DrawShapeOptions {
+  /** Canvas width */
+  width: number;
+  /** Canvas height */
+  height: number;
+  /** Shape to draw */
+  shape: ShapeType;
+  /** Fill color. Default: 'transparent' */
+  fill?: string;
+  /** Fill opacity. 0–1. Default: 1 */
+  fillOpacity?: number;
+  /** Stroke color */
+  stroke?: string;
+  /** Stroke width. Default: 0 */
+  strokeWidth?: number;
+  /** Border radius (rect only). Default: 0 */
+  borderRadius?: number;
+  /** Circle/ellipse center X. Defaults to canvas center */
+  cx?: number;
+  /** Circle/ellipse center Y. Defaults to canvas center */
+  cy?: number;
+  /** Circle radius or ellipse rx */
+  r?: number;
+  /** Ellipse ry */
+  ry?: number;
+  /** Line start X */
+  x1?: number;
+  /** Line start Y */
+  y1?: number;
+  /** Line end X */
+  x2?: number;
+  /** Line end Y */
+  y2?: number;
+}
+
+// ─── DropShadow ───────────────────────────────────────────────────────────────
+
+export interface DropShadowOptions {
+  /** Shadow color. Default: 'rgba(0,0,0,0.5)' */
+  color?: string;
+  /** Shadow offset X. Default: 4 */
+  offsetX?: number;
+  /** Shadow offset Y. Default: 4 */
+  offsetY?: number;
+  /** Blur radius. Default: 8 */
+  blur?: number;
+  /** Expand canvas to fit shadow. Default: true */
+  expand?: boolean;
+}
+
 // ─── Pipeline ─────────────────────────────────────────────────────────────────
 
 export type PipelineOperation =
@@ -259,9 +353,14 @@ export type PipelineOperation =
   | ({ op: 'watermark' } & WatermarkOptions)
   | ({ op: 'convert' } & ConvertOptions)
   | ({ op: 'optimize' } & OptimizeOptions)
-  | ({ op: 'removeBg' } & RemoveBgOptions);
+  | ({ op: 'removeBg' } & RemoveBgOptions)
+  | ({ op: 'rotate' } & RotateOptions)
+  | ({ op: 'gradientOverlay' } & GradientOverlayOptions)
+  | ({ op: 'clipToShape' } & ClipToShapeOptions)
+  | ({ op: 'dropShadow' } & DropShadowOptions);
 
 export interface BatchOptions {
   concurrency?: number;
   onProgress?: (done: number, total: number) => void;
 }
+

@@ -10,6 +10,10 @@ import { composite } from './composite.js';
 import { watermark } from './watermark.js';
 import { convert } from './convert.js';
 import { optimize } from './optimize.js';
+import { rotate } from './rotate.js';
+import { gradientOverlay } from './gradient-overlay.js';
+import { clipToShape } from './clip-to-shape.js';
+import { dropShadow } from './drop-shadow.js';
 
 export async function pipeline(input: ImageInput, operations: PipelineOperation[]): Promise<ImageResult & { step?: number }> {
   let currentImage = input;
@@ -31,6 +35,10 @@ export async function pipeline(input: ImageInput, operations: PipelineOperation[
         case 'watermark': result = await watermark(currentImage, op); break;
         case 'convert': result = await convert(currentImage, op); break;
         case 'optimize': result = await optimize(currentImage, op); break;
+        case 'rotate': result = await rotate(currentImage, op); break;
+        case 'gradientOverlay': result = await gradientOverlay(currentImage, op); break;
+        case 'clipToShape': result = await clipToShape(currentImage, op); break;
+        case 'dropShadow': result = await dropShadow(currentImage, op); break;
         case 'removeBg': {
           const { removeBg } = await import('./remove-bg.js');
           result = await removeBg(currentImage, op);
@@ -62,3 +70,4 @@ export async function pipeline(input: ImageInput, operations: PipelineOperation[
 
   return { ok: true, data: currentImage as Buffer };
 }
+

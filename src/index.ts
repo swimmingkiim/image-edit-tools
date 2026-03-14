@@ -22,3 +22,8 @@ export { detectFaces } from './ops/detect-faces.js';
 export { extractText } from './ops/extract-text.js';
 export { pipeline } from './ops/pipeline.js';
 export { batch } from './ops/batch.js';
+export { rotate } from './ops/rotate.js';
+export { gradientOverlay } from './ops/gradient-overlay.js';
+export { clipToShape } from './ops/clip-to-shape.js';
+export { drawShape } from './ops/draw-shape.js';
+export { dropShadow } from './ops/drop-shadow.js';

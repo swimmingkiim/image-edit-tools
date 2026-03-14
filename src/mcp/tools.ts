@@ -219,6 +219,80 @@ export const allTools: Tool[] = [
       },
       required: ['images', 'operation', 'options']
     }
+  },
+  {
+    name: 'image_rotate',
+    description: 'Rotates an image by an arbitrary angle. Exposed areas are transparent by default.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string' },
+        angle: { type: 'number', description: 'Rotation angle in degrees (0-360), clockwise' },
+        background: { type: 'string', description: 'Background color for exposed areas. Default: transparent' }
+      },
+      required: ['image', 'angle']
+    }
+  },
+  {
+    name: 'image_gradient_overlay',
+    description: 'Applies a gradient overlay for text readability. Great for placing text over photos.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string' },
+        direction: { type: 'string', enum: ['top','bottom','left','right','top-left','top-right','bottom-left','bottom-right'] },
+        color: { type: 'string', description: 'Gradient color. Default: #000000' },
+        opacity: { type: 'number', description: '0-1. Default: 0.7' },
+        coverage: { type: 'number', description: '0-1 how much of image is covered. Default: 0.5' }
+      },
+      required: ['image']
+    }
+  },
+  {
+    name: 'image_clip_to_shape',
+    description: 'Clips an image to a shape: circle, ellipse, or rounded-rect. Perfect for profile photos.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string' },
+        shape: { type: 'string', enum: ['circle', 'ellipse', 'rounded-rect'] },
+        borderRadius: { type: 'number', description: 'For rounded-rect. Default: 32' }
+      },
+      required: ['image', 'shape']
+    }
+  },
+  {
+    name: 'image_draw_shape',
+    description: 'Creates a new image containing a shape (rect, circle, ellipse, line). Use with composite to layer.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        width: { type: 'number' }, height: { type: 'number' },
+        shape: { type: 'string', enum: ['rect', 'circle', 'ellipse', 'line'] },
+        fill: { type: 'string' }, fillOpacity: { type: 'number' },
+        stroke: { type: 'string' }, strokeWidth: { type: 'number' },
+        borderRadius: { type: 'number' },
+        cx: { type: 'number' }, cy: { type: 'number' }, r: { type: 'number' }, ry: { type: 'number' },
+        x1: { type: 'number' }, y1: { type: 'number' }, x2: { type: 'number' }, y2: { type: 'number' }
+      },
+      required: ['width', 'height', 'shape']
+    }
+  },
+  {
+    name: 'image_drop_shadow',
+    description: 'Adds a drop shadow behind the image. Expands canvas to fit shadow.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string' },
+        color: { type: 'string', description: 'Shadow color. Default: rgba(0,0,0,0.5)' },
+        offsetX: { type: 'number', description: 'Default: 4' },
+        offsetY: { type: 'number', description: 'Default: 4' },
+        blur: { type: 'number', description: 'Blur radius. Default: 8' },
+        expand: { type: 'boolean', description: 'Expand canvas. Default: true' }
+      },
+      required: ['image']
+    }
   }
 ];
 
@@ -260,6 +334,18 @@ export async function handleTool(name: string, args: Record<string, any>): Promi
     const txt = await api.extractText(image, args);
     return JSON.stringify(txt);
   }
+  else if (name === 'image_rotate') result = await api.rotate(image, args as any);
+  else if (name === 'image_gradient_overlay') result = await api.gradientOverlay(image, args as any);
+  else if (name === 'image_clip_to_shape') result = await api.clipToShape(image, args as any);
+  else if (name === 'image_draw_shape') {
+    result = await api.drawShape(args as any);
+    if (result && result.ok && Buffer.isBuffer(result.data)) {
+      const b64 = result.data.toString('base64');
+      return JSON.stringify({ ok: true, data: `data:image/png;base64,${b64}` });
+    }
+    return JSON.stringify(result);
+  }
+  else if (name === 'image_drop_shadow') result = await api.dropShadow(image, args as any);
   else {
     return JSON.stringify({ error: `Tool ${name} not implemented`, code: 'INVALID_INPUT' });
   }

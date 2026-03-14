@@ -97,7 +97,17 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
       }
 
       // Always use dominant-baseline: auto (alphabetic) — the only value librsvg reliably supports
-      const style = `font-family: ${fontFamily}; font-size: ${fontSize}px; fill: ${color}; opacity: ${opacity}; text-anchor: ${align}; dominant-baseline: auto;`;
+      let style = `font-family: ${fontFamily}; font-size: ${fontSize}px; fill: ${color}; opacity: ${opacity}; text-anchor: ${align}; dominant-baseline: auto;`;
+
+      // Letter spacing
+      if (layer.letterSpacing) {
+        style += ` letter-spacing: ${layer.letterSpacing}px;`;
+      }
+
+      // Stroke (outline) — paint-order renders stroke behind fill
+      if (layer.stroke) {
+        style += ` stroke: ${layer.stroke.color}; stroke-width: ${layer.stroke.width}px; paint-order: stroke;`;
+      }
       
       let layerSvg = '';
 
@@ -127,6 +137,20 @@ export async function addText(input: ImageInput, options: { layers: TextLayer[] 
         }
 
         layerSvg += `<rect x="${rectX}" y="${rectY}" width="${approxMaxWidth + pad * 2}" height="${totalHeight + pad * 2}" fill="${bg.color}" opacity="${bgOpacity}" rx="${radius}" ry="${radius}" />`;
+      }
+
+      // Text shadow: render a duplicate text behind the main text
+      if (layer.textShadow) {
+        const ts = layer.textShadow;
+        const shadowStyle = `font-family: ${fontFamily}; font-size: ${fontSize}px; fill: ${ts.color}; opacity: ${opacity}; text-anchor: ${align}; dominant-baseline: auto;${layer.letterSpacing ? ` letter-spacing: ${layer.letterSpacing}px;` : ''}`;
+        const sx = layer.x + ts.offsetX;
+        const sy = renderY + ts.offsetY;
+        layerSvg += `<text x="${sx}" y="${sy}" style="${shadowStyle}">`;
+        lines.forEach((line, idx) => {
+          let dy = idx === 0 ? 0 : fontSize * lineHeight;
+          layerSvg += `<tspan x="${sx}" dy="${dy}">${escapeXml(line)}</tspan>`;
+        });
+        layerSvg += `</text>`;
       }
 
       layerSvg += `<text x="${layer.x}" y="${renderY}" style="${style}">`;
