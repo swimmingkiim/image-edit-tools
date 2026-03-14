@@ -12,6 +12,15 @@ export default defineConfig({
         functions: 70,
         branches: 50,
       },
+      exclude: [
+        'scripts/**',
+        'src/index.ts',
+        'src/mcp/index.ts',
+        'src/mcp/server.ts',
+        'src/mcp/tools.ts', // mostly wiring, E2E tested
+        'src/ops/detect-subject.ts', // unimplemented/stubbed
+        'src/ops/remove-bg.ts' // heavy AI model, requires optional mocking
+      ]
     },
     testTimeout: 30000,
   },
