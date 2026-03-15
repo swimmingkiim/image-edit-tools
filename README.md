@@ -2,6 +2,8 @@
 
 A TypeScript-first, deterministic, purely functional image editing SDK designed for AI Agents (Cursor, Windsurf, Claude).
 
+![Before and After](img/before-after.jpg)
+
 - **Pure Functions**: No side effects, no mutations, all strict structural typing.
 - **Agent Native**: Includes a built-in Model Context Protocol (MCP) server so AI agents can use all operations natively!
 - **Never Throws**: Every function returns `{ok, data}` or `{ok, false, error}`.
